@@ -4,18 +4,28 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pump-gcp-radar"
-version = "0.2.1"
-description = "gcp-radar with a one-command push of inventory and billing CSVs to Pump"
+version = "0.3.0"
+description = "GCP inventory, committed use discount and billing scanner with a one-command upload to Pump"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
 authors = [{name = "Pump"}]
-dependencies = ["gcp-radar>=1.3.0,<1.4"]
+dependencies = [
+  "google-cloud-compute>=1.14.0",
+  "google-api-python-client>=2.0.0",
+  "google-cloud-functions>=1.5.0",
+  "google-cloud-container>=2.35.0",
+  "google-cloud-storage>=2.14.0",
+  "google-cloud-run>=0.10.0",
+  "google-cloud-firestore>=2.14.0",
+  "google-cloud-pubsub>=2.20.0",
+  "google-cloud-bigquery>=3.0.0",
+  "rich>=13.0.0",
+]
 
 [project.optional-dependencies]
 dev = ["pytest", "build", "twine"]
 
-# gcp-radar's CLI, plus `run --upload-token`.
 [project.scripts]
 pump-gcp-radar = "pump_gcp_radar.cli:main"
 

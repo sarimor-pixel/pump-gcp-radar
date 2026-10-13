@@ -1,11 +1,11 @@
 # pump-gcp-radar
 
-A wrapper around [gcp-radar](https://pypi.org/project/gcp-radar/) that adds a
-one-command push of your GCP inventory and billing CSVs to Pump's self-serve
-onboarding endpoint — no standing cross-account access required.
+Scans a GCP project's resources, committed use discounts and billing, and pushes the
+results to Pump's self-serve onboarding endpoint in one command — no standing
+cross-account access required.
 
-Everything in gcp-radar (`inventory`, `billing`, `diagram`, `run`, ...) works
-unchanged. The only addition is `run --upload-token`.
+Commands: `inventory`, `commitments`, `billing`, `diagram` and `run`. `run --upload-token`
+uploads the scan to Pump.
 
 ## Install
 
@@ -13,8 +13,7 @@ unchanged. The only addition is `run --upload-token`.
 pip install pump-gcp-radar
 ```
 
-The console script is `pump-gcp-radar`, so it installs alongside upstream
-`gcp-radar` without colliding.
+The console script is `pump-gcp-radar` (or `python -m pump_gcp_radar`).
 
 ## Pump onboarding
 
@@ -29,19 +28,18 @@ pump-gcp-radar run --project my-proj \
 ```
 
 This inventories the project read-only (resources and committed use discounts),
-queries the billing export, writes gcp-radar's combined CSV locally (`--output`,
+queries the billing export, writes the combined CSV locally (`--output`,
 default `inventory.csv`), and uploads it to Pump as two files. Pump detects both,
 runs its analysis, and surfaces the findings in the app. Add `--diagram
 architecture.drawio` to also write a diagram locally.
 
-All of `run`'s own options (`--project`, `--billing-table`, `--billing-days`,
-`--billing-account`, `--output`, `--diagram`, ...) work as in gcp-radar. Without a
-billing table (`--billing-table` or `$GCP_RADAR_BILLING_TABLE`), only the
-inventory is uploaded. `--upload-token` is only supported with `run`, and it
-isn't listed in `--help` because gcp-radar owns that parser.
+`run` also takes `--project`, `--billing-table`, `--billing-days`,
+`--billing-account`, `--output` and `--diagram` (see `pump-gcp-radar run --help`).
+Without a billing table (`--billing-table` or `$GCP_RADAR_BILLING_TABLE`), only the
+inventory is uploaded. `--upload-token` is only supported with `run`.
 
-The two uploaded files use gcp-radar's one-shot format (a `RecordType` column on
-every row), split from the combined CSV:
+The two uploaded files use the one-shot format (a `RecordType` column on every
+row), split from the combined CSV:
 
 - `inventory.csv`: `Inventory` and `Commitment` (CUD) rows
 - `billing.csv`: `DailyCost`, `MonthlyCost`, `SkuCost` and `Credit` rows
@@ -68,19 +66,20 @@ PUMP_API_BASE=http://localhost:8001 pump-gcp-radar run --billing-table ... --upl
 
 ### How the push works
 
-`pump_gcp_radar/cli.py` strips `--upload-token` and `--api-base` from the command
-line, runs gcp-radar's real `main()`, and after a successful `run` splits the CSV.
-Then `pump_gcp_radar/upload.py`:
+After a successful `run`, `pump_gcp_radar/cli.py` splits the CSV. Then
+`pump_gcp_radar/upload.py`:
 
 1. For each role (`inventory`, `billing`), POSTs `{api_base}/api/v1/estimate/radar/urls`
    with `{"token", "role"}` and receives a presigned S3 PUT URL.
 2. PUTs the corresponding CSV with `Content-Type: text/csv` (the presigned URL
    signs the content-type, so it must match).
 
-## Relationship to upstream
+## Relationship to gcp-radar
 
-This package builds on gcp-radar (MIT). The scanning and billing code is
-upstream's; the Pump push is this package's addition.
+The scanning, billing, combined-CSV and diagram code and the command line come from
+[gcp-radar](https://pypi.org/project/gcp-radar/) 1.3.0 by Mor Michaeli (MIT; see
+`NOTICE`). They are part of this package, so gcp-radar is no longer a dependency and
+changes to what is collected are made here.
 
 ## Development
 
