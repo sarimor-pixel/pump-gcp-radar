@@ -104,13 +104,10 @@ def _add_geometry(cell, x, y, width, height, relative="0"):
 
 
 def read_csv(path):
-    """Read inventory CSV."""
-    rows = []
+    """Read an inventory CSV, skipping the ``#`` comment line the exporters write first."""
     with open(path, newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            rows.append(row)
-    return rows
+        lines = [line for line in f if not line.startswith("#")]
+    return list(csv.DictReader(lines))
 
 
 def _compute_canvas_size(by_category):
