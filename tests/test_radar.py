@@ -164,23 +164,18 @@ def test_resolve_commitment_scope_whole_billing_account(monkeypatch):
 
 
 def test_export_csv(tmp_path):
-    from pump_gcp_radar.inventory import COLS
-    import csv
-    
+    from pump_gcp_radar.inventory import COLS, export_csv
+
     rows = [
         {c: f"val_{c}" for c in COLS},
         {c: f"val2_{c}" for c in COLS},
     ]
     out = tmp_path / "test.csv"
-    
-    with open(out, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=COLS)
-        writer.writeheader()
-        writer.writerows(rows)
-    
+    export_csv(rows, str(out))
+
     with open(out) as f:
-        reader = csv.DictReader(f)
-        read_rows = list(reader)
-    
+        lines = f.read().splitlines()
+    assert lines[0].startswith("#")              # generator comment header
+    read_rows = list(csv.DictReader(io.StringIO("\n".join(lines[1:]))))
     assert len(read_rows) == 2
     assert read_rows[0]["Service"] == "val_Service"
